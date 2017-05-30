@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target name="com.felixmorgner.clycer.cdt921" sequenceNumber="2">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.cdt.sdk.feature.group" version="9.2.1.201703062208"/>
+<repository location="http://download.eclipse.org/releases/neon"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.platform.sdk" version="4.6.3.M20170301-0400"/>
+<unit id="org.eclipse.sdk.ide" version="4.6.3.M20170301-0400"/>
+<repository location="http://download.eclipse.org/eclipse/updates/4.6"/>
+</location>
+</locations>
+</target>

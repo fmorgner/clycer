@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+  <extension id="com.felixmorgner.clycer.menu" name="Clycer" point="org.eclipse.ui.menus">
+    <menuContribution allPopups="false" locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu?after=additions">
+      <command commandId="com.felixmorgner.clycer.ui.command.StartSlicing" label="Start slicing" style="push">
+        <visibleWhen checkEnabled="false">
+          <with variable="activeMenuSelection">
+          	<count value="1"></count>
+            <iterate ifEmpty="false">
+              <adapt type="org.eclipse.core.resources.IFile">
+              </adapt>
+            </iterate>
+          </with>
+        </visibleWhen>
+      </command>
+    </menuContribution>
+  </extension>
+  <extension point="org.eclipse.ui.commands">
+    <command defaultHandler="com.felixmorgner.clycer.ui.command.StartSlicing" id="com.felixmorgner.clycer.ui.command.StartSlicing" name="Run ORBS">
+    </command>
+  </extension>
+</plugin>
