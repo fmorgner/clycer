@@ -26,94 +26,75 @@ import org.eclipse.ui.texteditor.ITextEditor;
 
 import com.felixmorgner.clycer.Activator;
 import com.felixmorgner.clycer.algorithm.ORBS;
+import com.felixmorgner.clycer.ui.SelectionHelper;
 
 public class StartSlicing extends AbstractHandler {
 
-	private IFile getSelectedFile() throws ExecutionException {
-		IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-		if (window == null) {
-			throw new ExecutionException("No window found");
-		}
+    private IFile getSelectedFile() throws ExecutionException {
+        IAdaptable selection = SelectionHelper.getSelectedAdaptable(IAdaptable.class);
 
-		ISelection selection = window.getSelectionService().getSelection();
-		if (selection.isEmpty()) {
-			throw new ExecutionException("Selection is empty");
-		} else if (!(selection instanceof IStructuredSelection)) {
-			throw new ExecutionException("Wrong selection type");
-		}
+        IFile file = selection.getAdapter(IFile.class);
+        if (file == null) {
+            throw new ExecutionException("The selected entity is not a file");
+        }
 
-		IStructuredSelection treeSelection = (IStructuredSelection) selection;
-		if (treeSelection.size() > 1) {
-			throw new ExecutionException("Too many resources selected");
-		}
+        return file;
+    }
 
-		Object element = treeSelection.getFirstElement();
-		if (!(element instanceof IAdaptable)) {
-			throw new ExecutionException("The selected entity is not adaptable");
-		}
+    @Override
+    public Object execute(ExecutionEvent event) throws ExecutionException {
+        IFile selectedFile = null;
+        try {
+            selectedFile = getSelectedFile();
+        } catch (ExecutionException e) {
+            Activator.getDefault().logThrown(e, "Failed to acquire selected file!");
+            return null;
+        }
 
-		IFile selectedFile = ((IAdaptable) element).getAdapter(IFile.class);
-		if (selectedFile == null) {
-			throw new ExecutionException("The selected entity is not a file");
-		}
+        ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
+        ILaunchConfiguration launchConfiguration = null;
+        try {
+            ILaunchConfiguration[] launchConfigurations = launchManager.getLaunchConfigurations();
+            if (launchConfigurations.length == 0) {
+                Activator.getDefault().logError("No launch configurations found!");
+                return null;
+            }
+            for (ILaunchConfiguration entry : launchConfigurations) {
+                if (entry.getAttribute("org.eclipse.cdt.launch.PROJECT_ATTR", "")
+                        .equals(selectedFile.getProject().getName())) {
+                    launchConfiguration = entry;
+                    break;
+                }
+            }
+        } catch (CoreException e) {
+            Activator.getDefault().logThrown(e, "Failed to retrieve launch configurations!");
+            return null;
+        }
 
-		return selectedFile;
-	}
-
-	@Override
-	public Object execute(ExecutionEvent event) throws ExecutionException {
-		IFile selectedFile = null;
-		try {
-			selectedFile = getSelectedFile();
-		} catch (ExecutionException e) {
-			Activator.getDefault().logThrown(e, "Failed to acquire selected file!");
-			return null;
-		}
-
-		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
-		ILaunchConfiguration launchConfiguration = null;
-		try {
-			ILaunchConfiguration[] launchConfigurations = launchManager.getLaunchConfigurations();
-			if (launchConfigurations.length == 0) {
-				Activator.getDefault().logError("No launch configurations found!");
-				return null;
-			}
-			for (ILaunchConfiguration entry : launchConfigurations) {
-				if (entry.getAttribute("org.eclipse.cdt.launch.PROJECT_ATTR", "")
-						.equals(selectedFile.getProject().getName())) {
-					launchConfiguration = entry;
-					break;
-				}
-			}
-		} catch (CoreException e) {
-			Activator.getDefault().logThrown(e, "Failed to retrieve launch configurations!");
-			return null;
-		}
-
-		IWorkbench workbench = PlatformUI.getWorkbench();
-		IProgressService progressService = workbench.getProgressService();
-		IEditorDescriptor editorDescriptor = PlatformUI.getWorkbench().getEditorRegistry()
-				.getDefaultEditor(selectedFile.getName());
-		IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
-		IEditorPart part;
-		try {
-			part = window.getActivePage().openEditor(new FileEditorInput(selectedFile), editorDescriptor.getId());
-		} catch (PartInitException e) {
-			throw new ExecutionException("ORBS Start failed", e);
-		}
-		ITextEditor editor = (ITextEditor) part;
-		try {
-			final IFile target = selectedFile;
-			final ILaunchConfiguration configuration = launchConfiguration;
-			progressService.busyCursorWhile(progressMonitor -> {
-				ORBS algorithm = new ORBS(target, editor.getDocumentProvider(), editor.getEditorInput(),
-						progressMonitor, configuration);
-				algorithm.startProcessing();
-			});
-		} catch (InvocationTargetException | InterruptedException e) {
-			Activator.getDefault().logThrown(e, "ORBS execution failed");
-		}
-		return null;
-	}
+        IWorkbench workbench = PlatformUI.getWorkbench();
+        IProgressService progressService = workbench.getProgressService();
+        IEditorDescriptor editorDescriptor = PlatformUI.getWorkbench().getEditorRegistry()
+                .getDefaultEditor(selectedFile.getName());
+        IWorkbenchWindow window = HandlerUtil.getActiveWorkbenchWindow(event);
+        IEditorPart part;
+        try {
+            part = window.getActivePage().openEditor(new FileEditorInput(selectedFile), editorDescriptor.getId());
+        } catch (PartInitException e) {
+            throw new ExecutionException("ORBS Start failed", e);
+        }
+        ITextEditor editor = (ITextEditor) part;
+        try {
+            final IFile target = selectedFile;
+            final ILaunchConfiguration configuration = launchConfiguration;
+            progressService.busyCursorWhile(progressMonitor -> {
+                ORBS algorithm = new ORBS(target, editor.getDocumentProvider(), editor.getEditorInput(),
+                        progressMonitor, configuration);
+                algorithm.startProcessing();
+            });
+        } catch (InvocationTargetException | InterruptedException e) {
+            Activator.getDefault().logThrown(e, "ORBS execution failed");
+        }
+        return null;
+    }
 
 }
