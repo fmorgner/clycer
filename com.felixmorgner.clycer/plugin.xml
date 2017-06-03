@@ -2,22 +2,73 @@
 <?eclipse version="3.0"?>
 <plugin>
   <extension id="com.felixmorgner.clycer.menu" name="Clycer" point="org.eclipse.ui.menus">
-    <menuContribution allPopups="false" locationURI="popup:org.eclipse.ui.popup.any?after=additions">
-      <command commandId="com.felixmorgner.clycer.ui.command.StartSlicing" label="Start slicing" style="push">
-        <visibleWhen checkEnabled="false">
-          <with variable="activeMenuSelection">
-          	<count value="1"></count>
-            <iterate ifEmpty="false">
-              <adapt type="org.eclipse.core.resources.IFile">
-              </adapt>
-            </iterate>
-          </with>
-        </visibleWhen>
-      </command>
-    </menuContribution>
+    <menuContribution allPopups="true" locationURI="popup:org.eclipse.ui.popup.any?after=additions">
+      <menu
+            icon="resources/icons/clycer.png"
+            id="com.felixmorgner.clycer.submenu"
+            label="Clycer"
+            mnemonic="y"
+            tooltip="Choose Clycer actions">
+         <command
+               commandId="com.felixmorgner.clycer.ui.command.StartSlicing"
+               disabledIcon="platform:/plugin/org.eclipse.debug.ui/icons/full/dtool16/debug_exc.png"
+               icon="platform:/plugin/org.eclipse.debug.ui/icons/full/etool16/debug_exc.png"
+               id="com.felixmorgner.clycer.submenu.start"
+               label="Start slicing"
+               mnemonic="S"
+               style="push"
+               tooltip="Start the ORBS slicing process">
+         <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activeMenuSelection">
+                  <count
+                        value="1">
+                  </count>
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IFile">
+                     </adapt>
+                  </iterate>
+               </with>
+            </visibleWhen>
+            </command>
+         <command
+               commandId="com.felixmorgner.clycer.ui.command.ImportInstrumentation"
+               icon="platform:/plugin/org.eclipse.ui/icons/full/etool16/import_wiz.png"
+               id="com.felixmorgner.clycer.submenu.import"
+               label="Import Instrumentation"
+               mnemonic="I"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+                  <iterate
+                        ifEmpty="false">
+                     <adapt
+                           type="org.eclipse.core.resources.IResource">
+                        <test
+                        	  forcePluginActivation="true"
+                              property="org.eclipse.core.resources.projectNature"
+                              value="org.eclipse.cdt.core.cnature">
+                        </test>
+                     </adapt>
+                  </iterate>
+            </visibleWhen>
+         </command>
+            </menu>
+            </menuContribution>
   </extension>
   <extension point="org.eclipse.ui.commands">
-    <command defaultHandler="com.felixmorgner.clycer.ui.command.StartSlicing" id="com.felixmorgner.clycer.ui.command.StartSlicing" name="Run ORBS">
+    <command
+    	defaultHandler="com.felixmorgner.clycer.ui.command.StartSlicing"
+    	id="com.felixmorgner.clycer.ui.command.StartSlicing"
+    	name="Run ORBS">
+    </command>
+    <command
+          defaultHandler="com.felixmorgner.clycer.ui.command.ImportInstrumentation"
+          id="com.felixmorgner.clycer.ui.command.ImportInstrumentation"
+          name="Import Instrumentation header">
     </command>
   </extension>
 </plugin>
