@@ -22,16 +22,41 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.osgi.util.NLS;
+import org.osgi.framework.Bundle;
 
 import com.felixmorgner.clycer.Activator;
 import com.felixmorgner.clycer.ui.SelectionHelper;
 
 public class ImportInstrumentation extends AbstractHandler {
 
+	private static class Messages extends NLS {
+
+		private static final String BUNDLE_NAME = "com.felixmorgner.clycer.ui.command.importinstrumentation"; //$NON-NLS-1$
+
+		public static String Error_FolderCreate;
+		public static String Error_LocateClycerHeader;
+		public static String Error_ReadClycerHeader;
+		public static String Error_EntitiyNotAResource;
+		public static String Error_DeleteExistingHeader;
+		public static String Error_CreateHeader;
+		public static String Error_RegisterIncludePath;
+
+		static {
+			NLS.initializeMessages(BUNDLE_NAME, ImportInstrumentation.class);
+		}
+		
+	}
+
+	private static final String HEADER_FILENAME = "clycer.hpp";
+	private static final String RESOURCES_PATH = "resources/headers";
+	private static final String FOLDER_NAME = "clycer";
+	private static final String WORKSPACE_PATH_FORMAT = "\"${workspace_loc:%s}\"";
+
 	private IProject fProject = null;
 
 	private IFolder getClycerFolder() throws ExecutionException {
-		IFolder clycerFolder = fProject.getFolder("clycer");
+		IFolder clycerFolder = fProject.getFolder(FOLDER_NAME);
 		if (clycerFolder.exists()) {
 			return clycerFolder;
 		}
@@ -39,17 +64,17 @@ public class ImportInstrumentation extends AbstractHandler {
 		try {
 			clycerFolder.create(0, true, null);
 		} catch (CoreException e) {
-			throw new ExecutionException("Failed to clycer folder", e);
+			throw new ExecutionException(Messages.Error_FolderCreate, e);
 		}
 
 		return clycerFolder;
 	}
 
 	private InputStream getHeaderSourceStream() throws ExecutionException {
-		Enumeration<URL> entries = Activator.getDefault().getBundle().findEntries("resources/headers", "clycer.hpp",
-				false);
+		Bundle pluginBundle = Activator.getDefault().getBundle();
+		Enumeration<URL> entries = pluginBundle.findEntries(RESOURCES_PATH, HEADER_FILENAME, false);
 		if (!entries.hasMoreElements()) {
-			throw new ExecutionException("Failed to locate clycer.hpp source");
+			throw new ExecutionException(Messages.Error_LocateClycerHeader);
 		}
 
 		URL headerUrl = entries.nextElement();
@@ -57,7 +82,7 @@ public class ImportInstrumentation extends AbstractHandler {
 		try {
 			fileStream = headerUrl.openStream();
 		} catch (IOException e) {
-			throw new ExecutionException("Failed to read clycer.hpp source", e);
+			throw new ExecutionException(Messages.Error_ReadClycerHeader, e);
 		}
 
 		return fileStream;
@@ -67,7 +92,9 @@ public class ImportInstrumentation extends AbstractHandler {
 	private void registerIncludePath() throws BuildException, ExecutionException {
 		IManagedBuildInfo buildInfo = ManagedBuildManager.getBuildInfo(fProject);
 		IConfiguration[] configurations = buildInfo.getManagedProject().getConfigurations();
-		String headerPath = "\"${workspace_loc:" + getClycerFolder().getFullPath().toPortableString() + "}\"";
+
+		String pathString = getClycerFolder().getFullPath().toPortableString();
+		String headerPath = String.format(WORKSPACE_PATH_FORMAT, pathString);
 		for (IConfiguration configuration : configurations) {
 			IToolChain toolchain = configuration.getToolChain();
 			for (ITool tool : toolchain.getTools()) {
@@ -89,18 +116,18 @@ public class ImportInstrumentation extends AbstractHandler {
 		IAdaptable selection = SelectionHelper.getSelectedAdaptable(IAdaptable.class);
 		IResource resource = selection.getAdapter(IResource.class);
 		if (resource == null) {
-			throw new ExecutionException("The selected entity is not a resource");
+			throw new ExecutionException(Messages.Error_EntitiyNotAResource);
 		}
 		fProject = resource.getProject();
 
 		IFolder clycerFolder = getClycerFolder();
-		IFile file = clycerFolder.getFile("clycer.hpp");
+		IFile file = clycerFolder.getFile(HEADER_FILENAME);
 
 		if (file.exists()) {
 			try {
 				file.delete(true, null);
 			} catch (CoreException e) {
-				throw new ExecutionException("Failed to delete existing clycer.hpp", e);
+				throw new ExecutionException(Messages.Error_DeleteExistingHeader, e);
 			}
 		}
 
@@ -108,13 +135,13 @@ public class ImportInstrumentation extends AbstractHandler {
 		try {
 			file.create(headerSource, true, null);
 		} catch (CoreException e) {
-			throw new ExecutionException("Failed to create clycer projection header", e);
+			throw new ExecutionException(Messages.Error_CreateHeader, e);
 		}
 
 		try {
 			registerIncludePath();
 		} catch (BuildException e) {
-			throw new ExecutionException("Failed to register clycer include path", e);
+			throw new ExecutionException(Messages.Error_RegisterIncludePath, e);
 		}
 
 		return null;
