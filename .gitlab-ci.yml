@@ -1,0 +1,42 @@
+image: maven:3-jdk-8
+
+stages:
+  - build
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version"
+
+cache:
+  paths:
+    - .m2/repository
+  key: "$CI_BUILD_REPO"
+
+before_script:
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
+
+build_p2:
+  stage: build
+  only:
+    - master
+  script:
+    - 'mvn $MAVEN_CLI_OPTS package'
+  artifacts:
+    paths:
+      - com.felixmorgner.clycer.updatesite/target/site
+
+deploy_p2:
+  stage: deploy
+  only:
+    - master
+  script:
+    - ssh gitlab-ci@felixmorgner.com mkdir -p /var/www/felixmorgner/clycer/update
+    - scp -r com.felixmorgner.clycer.updatesite/target/site/* gitlab-ci@felixmorgner.com:/var/www/felixmorgner/clycer/update
+  artifacts:
+    paths:
+      - com.felixmorgner.clycer.updatesite/target/site
