@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/com.felixmorgner.clycer.feature_1.0.0.qualifier.jar" id="com.felixmorgner.clycer.feature" version="1.0.0.qualifier"/>
+   <feature url="features/com.felixmorgner.clycer.feature_1.0.0.qualifier.jar" id="com.felixmorgner.clycer.feature" version="1.0.0.qualifier">
+      <category name="com.felixmorgner.clycer.category"/>
+   </feature>
+   <category-def name="com.felixmorgner.clycer.category" label="Debugging"/>
 </site>
