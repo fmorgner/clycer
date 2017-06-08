@@ -35,8 +35,8 @@ deploy_p2:
   only:
     - master
   script:
-    - ssh gitlab-ci@felixmorgner.com mkdir -p /var/www/felixmorgner/clycer/update
-    - scp -r com.felixmorgner.clycer.updatesite/target/site/* gitlab-ci@felixmorgner.com:/var/www/felixmorgner/clycer/update
+    - 'scp -r com.felixmorgner.clycer.updatesite/target/site gitlab-ci@felixmorgner.com:/var/www/felixmorgner/clycer/update/${CI_JOB_ID}'
+    - 'ssh gitlab-ci@felixmorgner.com "cd /var/www/felixmorgner/clycer/update && ./compile"'
   artifacts:
     paths:
       - com.felixmorgner.clycer.updatesite/target/site
